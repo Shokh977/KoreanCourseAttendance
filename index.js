@@ -132,15 +132,21 @@ async function startBot() {
           time
         };        // Get API URL from environment variable, or use default URL depending on environment
         const apiUrl = process.env.API_URL || 'https://davomat-od2i.onrender.com/attend';
-        
-        console.log(`Sending attendance data to: ${apiUrl}`);
+          console.log(`Sending attendance data to: ${apiUrl}`);
+        console.log('Attendance data:', JSON.stringify(attendanceData));
         
         axios.post(apiUrl, attendanceData)
           .then(response => {
+            console.log('Attendance response:', response.data);
             // Send success message in Uzbek
             bot.sendMessage(chatId, "Rahmat, davomatingiz yozib qo'yildi ✅");
-          })      .catch(error => {
-            console.error('Error sending attendance data:', error);
+          })
+          .catch(error => {
+            console.error('Error sending attendance data:', error.message);
+            if (error.response) {
+              console.error('Error response data:', error.response.data);
+              console.error('Error response status:', error.response.status);
+            }
             bot.sendMessage(chatId, "Kechirasiz, xatolik yuz berdi ❌");
           })
           .finally(() => {

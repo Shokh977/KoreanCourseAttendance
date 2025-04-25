@@ -15,11 +15,10 @@ The error "ETELEGRAM: 409 Conflict: terminated by other getUpdates request" happ
 
    Make sure your `.env` file has the correct settings:
 
-   ```
-   # Set to true in production
+   ```   # Set to true in production
    USE_WEBHOOKS=true   # Webhook settings
    PORT=3000
-   WEBHOOK_URL=https://your-actual-render-service-name.onrender.com
+   WEBHOOK_URL=https://koreancourseattendance.onrender.com
    
    # API endpoint for the backend service
    API_URL=https://davomat-od2i.onrender.com/attend

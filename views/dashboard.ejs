@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Dashboard</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="row">
+            <div class="col-12">
+                <h1 class="mb-4 text-center">Korean Class Attendance Dashboard</h1>
+                
+                <!-- Participant Statistics -->
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h2 class="h4 mb-0">Participant Statistics</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Attendance Count</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% Object.keys(participantCounts).sort((a, b) => participantCounts[b] - participantCounts[a]).forEach(name => { %>
+                                        <tr>
+                                            <td><%= name %></td>
+                                            <td><%= participantCounts[name] %></td>
+                                        </tr>
+                                    <% }); %>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Attendance by Date -->
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <h2 class="h4 mb-0">Attendance by Date</h2>
+                    </div>
+                    <div class="card-body">
+                        <% if (sortedDates.length === 0) { %>
+                            <div class="alert alert-info">No attendance records found.</div>
+                        <% } else { %>
+                            <% sortedDates.forEach(date => { %>
+                                <div class="date-section mb-4">
+                                    <h3 class="h5 bg-light p-2 rounded">
+                                        <%= new Date(date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) %>
+                                        <span class="badge bg-primary ms-2"><%= attendanceByDate[date].length %> attendees</span>
+                                    </h3>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-bordered">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>Name</th>
+                                                    <th>Telegram Username</th>
+                                                    <th>Time</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <% attendanceByDate[date].sort((a, b) => new Date(a.time) - new Date(b.time)).forEach(record => { %>
+                                                    <tr>
+                                                        <td><%= record.fullName %></td>
+                                                        <td>@<%= record.username %></td>
+                                                        <td><%= new Date(record.time).toLocaleTimeString() %></td>
+                                                    </tr>
+                                                <% }); %>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            <% }); %>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-light text-center p-3 mt-5">
+        <p>Korean Class Attendance Dashboard © <%= new Date().getFullYear() %></p>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

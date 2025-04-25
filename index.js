@@ -5,7 +5,15 @@ require('dotenv').config();
 
 // Create a bot instance with your Telegram Bot Token
 const token = process.env.TELEGRAM_BOT_TOKEN;
-const bot = new TelegramBot(token, { polling: true });
+const bot = new TelegramBot(token, { 
+  polling: {
+    interval: 300,
+    timeout: 10,
+    limit: 100,
+    retryTimeout: 5000,
+    autoStart: true
+  }
+});
 
 // Store user states
 const userStates = {};
@@ -41,18 +49,19 @@ bot.on('message', (msg) => {
     const fullName = text;
     
     // Get current timestamp
-    const time = new Date().toISOString();
-      // Prepare data for API request
+    const time = new Date().toISOString();    // Prepare data for API request
     const attendanceData = {
       username,
       fullName,
       time
     };
-      // Send attendance data to Express API (use the deployed URL in production)
-    const apiUrl = process.env.NODE_ENV === 'production' 
-      ? 'https://attendance-backend.onrender.com/attend' 
-      : 'http://localhost:5000/attend';
-      
+    
+    // Get API URL from environment variable, or use default URL depending on environment
+    // Replace this URL with your actual deployed API URL from Render dashboard
+    const apiUrl = process.env.API_URL || 'https://your-api-name.onrender.com/attend';
+    
+    console.log(`Sending attendance data to: ${apiUrl}`);
+    
     axios.post(apiUrl, attendanceData)
       .then(response => {
         // Send success message in Uzbek

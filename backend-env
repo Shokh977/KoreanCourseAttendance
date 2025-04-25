@@ -1,0 +1,5 @@
+# MongoDB connection URI
+MONGODB_URI=mongodb+srv://uphilltowardshigh:Abdulazizov99@portfolio-cluster.wihnk.mongodb.net/attendance_db
+
+# Port for server to listen on
+PORT=5000

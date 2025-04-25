@@ -68,5 +68,12 @@ process.once('SIGTERM', () => {
   console.log('Bot stopped due to SIGTERM');
 });
 
-// Start the bot
-startBot().catch(console.error);
+// Export the bot and startBot function
+// This allows manual initialization from another file if needed
+module.exports = {
+  bot,
+  startBot
+};
+
+// Comment out automatic start to prevent conflicts with index.js
+// startBot().catch(console.error);

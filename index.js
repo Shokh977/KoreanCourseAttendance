@@ -8,6 +8,12 @@ const useWebhooks = process.env.USE_WEBHOOKS === 'true';
 const webhookUrl = process.env.WEBHOOK_URL;
 const port = process.env.PORT || 3000;
 
+// IMPORTANT: This file (index.js) is the main entry point for the bot.
+// If you're encountering "409 Conflict" errors, it means you might have:
+// 1. Multiple instances of the bot running simultaneously
+// 2. Another file (like bot.js) also trying to initialize the bot with the same token
+// Make sure only ONE instance of the bot is running at any time.
+
 // Start the bot
 async function startBot() {
   try {
@@ -33,13 +39,17 @@ async function startBot() {
       
       // Create bot in webhook mode
       bot = new TelegramBot(token, { polling: false });
-      
-      // Set the webhook
+        // Set the webhook
       const webhookPath = `/bot${token}`;
       const fullWebhookUrl = `${webhookUrl}${webhookPath}`;
       
-      await bot.setWebHook(fullWebhookUrl);
-      console.log(`Webhook set to: ${fullWebhookUrl}`);
+      try {
+        const webhookInfo = await bot.setWebHook(fullWebhookUrl);
+        console.log(`Webhook set to: ${fullWebhookUrl}`);
+        console.log('Webhook info:', webhookInfo);
+      } catch (error) {
+        console.error('Error setting webhook:', error);
+      }
       
       // Process webhook requests
       app.post(webhookPath, (req, res) => {

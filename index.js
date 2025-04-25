@@ -1,63 +1,81 @@
 require('dotenv').config();
 const TelegramBot = require('node-telegram-bot-api');
+const express = require('express');
 
 // Telegram bot token from environment variables
 const token = process.env.TELEGRAM_BOT_TOKEN;
+const useWebhooks = process.env.USE_WEBHOOKS === 'true';
+const webhookUrl = process.env.WEBHOOK_URL;
+const port = process.env.PORT || 3000;
 
 // Start the bot
 async function startBot() {
   try {
     console.log('Starting bot...');
+    let bot;
     
-    // Using TelegramBot method to clear webhook
-    // In node-telegram-bot-api, it's called 'setWebHook' with empty URL to remove
-    const options = { drop_pending_updates: true };
-    
+    // Create a temporary bot instance for setup
+    const setupBot = new TelegramBot(token, { polling: false });
+      // Always remove existing webhook to start fresh
     try {
-      // Create a bot instance without polling for setup
-      const setupBot = new TelegramBot(token, { polling: false });
-      
-      // Remove any existing webhook
-      await setupBot.setWebHook('', options);
+      await setupBot.deleteWebHook({ drop_pending_updates: true });
       console.log('Previous webhooks cleared');
-    } catch (setupError) {
-      console.warn('Error during webhook cleanup:', setupError.message);
-      // Continue anyway, as this might just be an issue with the cleanup
+    } catch (error) {
+      console.error('Error clearing webhooks:', error);
+    };
+    
+    if (useWebhooks && webhookUrl) {
+      console.log(`Setting up webhook mode on ${webhookUrl}`);
+      
+      // Create Express app for webhook
+      const app = express();
+      app.use(express.json());
+      
+      // Create bot in webhook mode
+      bot = new TelegramBot(token, { polling: false });
+      
+      // Set the webhook
+      const webhookPath = `/bot${token}`;
+      const fullWebhookUrl = `${webhookUrl}${webhookPath}`;
+      
+      await bot.setWebHook(fullWebhookUrl);
+      console.log(`Webhook set to: ${fullWebhookUrl}`);
+      
+      // Process webhook requests
+      app.post(webhookPath, (req, res) => {
+        bot.processUpdate(req.body);
+        res.sendStatus(200);
+      });
+      
+      // Health check endpoint
+      app.get('/', (req, res) => {
+        res.send('Bot server is running!');
+      });
+      
+      // Start express server
+      app.listen(port, () => {
+        console.log(`Express server is listening on port ${port}`);
+      });
+    } else {
+      console.log('Setting up polling mode');
+      // Create bot in polling mode for development
+      bot = new TelegramBot(token, {
+        polling: {
+          params: {
+            timeout: 50,
+            limit: 100
+          },
+          interval: 1000
+        }
+      });
+      
+      // Handle polling errors
+      bot.on('polling_error', (error) => {
+        console.error('Polling error:', error);
+      });
     }
     
-    // Configure bot with polling options
-    const bot = new TelegramBot(token, {
-      polling: {
-        params: {
-          timeout: 50,
-          limit: 100,
-          allowed_updates: [] // Receive all updates
-        },
-        interval: 1000 // Poll every second
-      }
-    });
-
     console.log('Bot is running...');
-
-    // Handle errors
-    bot.on('polling_error', (error) => {
-      console.error('Polling error:', error);
-      
-      // If we encounter a 409 conflict, try to restart
-      if (error.code === 'ETELEGRAM' && error.message.includes('409 Conflict')) {
-        console.log('Detected polling conflict, attempting to restart...');
-        bot.stopPolling()
-          .then(() => {
-            console.log('Polling stopped, waiting before restart...');
-            // Wait a bit before trying to restart
-            setTimeout(() => {
-              console.log('Restarting bot...');
-              startBot();
-            }, 10000); // Longer wait to ensure cleanup
-          })
-          .catch(err => console.error('Error stopping polling:', err));
-      }
-    });
 
     // Your bot command handlers and logic here
     // Import required modules
@@ -103,10 +121,8 @@ async function startBot() {
           fullName,
           time
         };
-        
-        // Get API URL from environment variable, or use default URL depending on environment
-        // Replace this URL with your actual deployed API URL from Render dashboard
-        const apiUrl = process.env.API_URL || 'https://your-api-name.onrender.com/attend';
+          // Get API URL from environment variable, or use default URL depending on environment
+        const apiUrl = process.env.API_URL || 'https://attendance-backend.onrender.com/attend';
         
         console.log(`Sending attendance data to: ${apiUrl}`);
         
@@ -126,15 +142,19 @@ async function startBot() {
     });
 
     // Graceful shutdown
-    process.once('SIGINT', () => {
-      bot.stopPolling();
-      console.log('Bot polling stopped due to SIGINT');
-    });
-    
-    process.once('SIGTERM', () => {
-      bot.stopPolling();
-      console.log('Bot polling stopped due to SIGTERM');
-    });
+    const gracefulShutdown = () => {
+      console.log('Shutting down bot...');
+      if (useWebhooks) {
+        // No need to stop anything for webhook mode
+        console.log('Webhook bot shutdown complete');
+      } else {
+        bot.stopPolling();
+        console.log('Polling stopped');
+      }
+    };
+
+    process.once('SIGINT', gracefulShutdown);
+    process.once('SIGTERM', gracefulShutdown);
 
     return bot;
   } catch (error) {

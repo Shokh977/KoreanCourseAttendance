@@ -7,21 +7,31 @@ const token = process.env.TELEGRAM_BOT_TOKEN;
 // Start the bot
 async function startBot() {
   try {
-    // First, create a temporary bot instance to clean up any existing webhooks
-    const cleanupBot = new TelegramBot(token, { polling: false });
+    console.log('Starting bot...');
     
-    // Delete any existing webhook and drop pending updates
-    await cleanupBot.deleteWebhook({ drop_pending_updates: true });
-    console.log('Previous webhooks cleared');
+    // Using TelegramBot method to clear webhook
+    // In node-telegram-bot-api, it's called 'setWebHook' with empty URL to remove
+    const options = { drop_pending_updates: true };
+    
+    try {
+      // Create a bot instance without polling for setup
+      const setupBot = new TelegramBot(token, { polling: false });
+      
+      // Remove any existing webhook
+      await setupBot.setWebHook('', options);
+      console.log('Previous webhooks cleared');
+    } catch (setupError) {
+      console.warn('Error during webhook cleanup:', setupError.message);
+      // Continue anyway, as this might just be an issue with the cleanup
+    }
     
     // Configure bot with polling options
     const bot = new TelegramBot(token, {
       polling: {
         params: {
-          timeout: 50, // Using params instead of timeout directly
+          timeout: 50,
           limit: 100,
-          allowed_updates: [], // Receive all updates
-          offset: -1 // Start with the latest update
+          allowed_updates: [] // Receive all updates
         },
         interval: 1000 // Poll every second
       }
@@ -43,7 +53,7 @@ async function startBot() {
             setTimeout(() => {
               console.log('Restarting bot...');
               startBot();
-            }, 5000);
+            }, 10000); // Longer wait to ensure cleanup
           })
           .catch(err => console.error('Error stopping polling:', err));
       }
@@ -117,12 +127,12 @@ async function startBot() {
 
     // Graceful shutdown
     process.once('SIGINT', () => {
-      bot.stopPolling({ cancel: true });
+      bot.stopPolling();
       console.log('Bot polling stopped due to SIGINT');
     });
     
     process.once('SIGTERM', () => {
-      bot.stopPolling({ cancel: true });
+      bot.stopPolling();
       console.log('Bot polling stopped due to SIGTERM');
     });
 

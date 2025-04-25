@@ -65,10 +65,9 @@ dashboard.get('/logout', (req, res) => {
 
 // Dashboard home page
 dashboard.get('/', async (req, res) => {
-  try {
-    // Fetch attendance data from MongoDB using the API
+  try {    // Fetch attendance data from MongoDB using the API
     const apiUrl = process.env.NODE_ENV === 'production' 
-      ? 'https://attendance-backend.onrender.com/attendances' 
+      ? 'https://davomat-od2i.onrender.com/attendances' 
       : 'http://localhost:5000/attendances';
     
     const response = await axios.get(apiUrl);

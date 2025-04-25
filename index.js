@@ -130,9 +130,8 @@ async function startBot() {
           username,
           fullName,
           time
-        };
-          // Get API URL from environment variable, or use default URL depending on environment
-        const apiUrl = process.env.API_URL || 'https://attendance-backend.onrender.com/attend';
+        };        // Get API URL from environment variable, or use default URL depending on environment
+        const apiUrl = process.env.API_URL || 'https://davomat-od2i.onrender.com/attend';
         
         console.log(`Sending attendance data to: ${apiUrl}`);
         
